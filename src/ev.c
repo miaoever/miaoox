@@ -27,7 +27,7 @@ EventLoop* evCreateEventLoop(int setsize) {
     if (evPollCreate(eventloop) == -1) goto err;
 
     for (i = 0; i < setsize; i++) {
-        eventloop->events[i].mask = AE_NONE;
+        eventloop->events[i].mask = EV_NONE;
     }
 
     return eventloop;
@@ -53,39 +53,39 @@ void evStop(evEventLoop* eventloop) {
 }
 
 int evCreateIOEvent(evEventloop* eventloop, int fd, int mask, IOProcecc* proc, void* clientData) {
-    if (fd >= eventloop->setsize) return AE_ERR;
+    if (fd >= eventloop->setsize) return EV_ERR;
     IOEvent *io = &eventloop->events[fd];
 
     if (evPollAddEvent(eventloop, fd, mask) == -1)
-        return AE_ERR;
+        return EV_ERR;
 
     //Add mask(event type) to io->mask
     io->mask |= mask;
-    if (mask & AE_READABLE) io->ReadProcecc = proc;
-    if (mask & AE_WRITABLE) io->WriteProcecc = proc;
+    if (mask & EV_READABLE) io->ReadProcecc = proc;
+    if (mask & EV_WRITABLE) io->WriteProcecc = proc;
 
     io->clientData = clientData;
 
     if (fd > eventloop->maxfd)
         eventloop->maxfd = fd;
 
-    return AE_OK;
+    return EV_OK;
 }
 
 void evDelIOEvent(evEventLoop* eventloop, int fd, int mask) {
     if (fd >= eventloop->setsize) return;
         IOEvent *io = &eventloop->events[fd];
 
-    if (io->mask == AE_NONE) return;
+    if (io->mask == EV_NONE) return;
     //Set io->mask to mask
     io->mask = io->mask & (~mask);
     /*If current fd is the last one in the event list, and have no other event on it*/
-    if (fd == eventloop->maxfd && fe->mask == AE_NONE) {
+    if (fd == eventloop->maxfd && fe->mask == EV_NONE) {
         /*Update the max fd*/
         int j;
 
         for (j = eventloop->maxfd - 1; j >= 0; j--) {
-            if (eventloop->events[j].mask != AE_NONE) break;
+            if (eventloop->events[j].mask != EV_NONE) break;
         }
         eventloop->maxfd = j;
     }
@@ -103,7 +103,7 @@ int evGetIOEnvents(evEventLoop* eventloop, int fd) {
 int evProcessEvents(evEventLoop* eventloop, int flags) {
     int processed = 0, numevents;
 
-    if (!(flags & AE_IO_EVENTS)) return 0;
+    if (!(flags & EV_IO_EVENTS)) return 0;
 
     if (eventloop != -1) {
         /*Get the number of fired events*/
@@ -115,11 +115,11 @@ int evProcessEvents(evEventLoop* eventloop, int flags) {
             int fd = eventloop->fired[j].fd;
             int rfired = 0;
 
-            if (io->mask & mask & AE_READBLE) {
+            if (io->mask & mask & EV_READBLE) {
                 rfired = 1;
                 io->ReadProcecc(eventloop, fd, io->clientData, mask);
             }
-            if (io->mask & mask & AE_WRITABLE) {
+            if (io->mask & mask & EV_WRITABLE) {
                 if (!rfired || io->WriteProcess != io->ReadProcess) {
                     io->WriteProcess(eventloop, fd, io->clientData, mask);
                 }
@@ -138,7 +138,7 @@ void evMain(evEventLoop* eventloop) {
         if (eventloop->beforesleep != NULL) {
             eventloop->beforesleep(eventloop);
         }
-        evProcessEvents(eventLoop, AE_IO_EVENTS);
+        evProcessEvents(eventLoop, EV_IO_EVENTS);
     }
 }
 

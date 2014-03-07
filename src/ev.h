@@ -1,14 +1,14 @@
 #ifndef __EV_H__
 #define __EV_H__
 
-#define AE_OK 0
-#define AE_ERR -1
+#define EV_OK 0
+#define EV_ERR -1
 
-#define AE_NONE 0
-#define AE_READABLE 1
-#define AE_WRITABLE 2
+#define EV_NONE 0
+#define EV_READABLE 1
+#define EV_WRITABLE 2
 
-#define AE_IO_EVENTS 1
+#define EV_IO_EVENTS 1
 
 struct evEventLoop;
 
