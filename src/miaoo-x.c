@@ -40,7 +40,7 @@ static void InitTCPServer() {
 }
 
 void DispatchConn(EventLoop* eventloop, int fd, void* client_data, int mask) {
-    int idx = master->worker_count;
+    int idx = master->max_worker_num;
     int isValid = 0;
     int notice = 0;
     Master* master = (master*)client_data;
@@ -50,8 +50,8 @@ void DispatchConn(EventLoop* eventloop, int fd, void* client_data, int mask) {
             isValid = 1;
             break;
         }
-        idx = (idx + 1) % master->max_num_worker;
-    } while(idx != worker_count)
+        idx = (idx + 1) % master->max_worker_num;
+    } while(idx != master->max_worker_num)
     /*No valid worker*/
     if (!isValid) {
         master->stop = 1;
@@ -86,7 +86,7 @@ static void DispatchSignal(int signal) {
     errno = err;
 }
 
-static void MasterSignalHandler(){
+static void MasterSignalHandler() {
     int sig, i ,j, stat;
     char signals[1024];
     pid_t pid;
@@ -100,7 +100,7 @@ static void MasterSignalHandler(){
                                 /*If worker[j] exited, mark it*/
                                 for (j = 0; j < master->max_worker_num) {
                                     if (master->workers[j].pid == pid) {
-                                        close(master->workders[j].pipefd[0]);
+                                        close(master->workers[j].pipefd[0]);
                                         master->alive_worker_num --;
                                         master->worker[j] = -1;
                                     }
@@ -143,7 +143,7 @@ static void InitMasterSignals() {
     SignalRegister(SIGPIPE, SIG_IGN, 1)
 }
 
-static void CreateWorkers(){
+static void CreateWorkers() {
     int i, retval;
     pid_t pid;
     int num_worker = master->max_worker_num;
@@ -169,6 +169,7 @@ static void CreateWorkers(){
 
 static void FreeMaster() {
     FreeWokers(master->workers);
+    evDeleteEventLoop(master->poll);
     free(master);
 }
 
